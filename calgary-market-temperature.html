@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Greater Calgary — Market Temperature</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f7f9fa;
+    padding: 32px 24px 40px;
+  }
+  .page { max-width: 900px; margin: 0 auto; }
+  .hs-badge {
+    display: inline-block;
+    background: #378add;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-bottom: 14px;
+  }
+  h1 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #111;
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    font-size: 13px;
+    color: #777;
+    margin-bottom: 24px;
+  }
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e4e4e4;
+    padding: 28px 28px 24px;
+  }
+  .legend-row {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: #555;
+    margin-bottom: 16px;
+    align-items: center;
+  }
+  .legend-item { display: flex; align-items: center; gap: 7px; }
+  .legend-swatch { width: 28px; height: 3px; border-radius: 2px; flex-shrink: 0; }
+  .legend-swatch.dashed {
+    background: repeating-linear-gradient(90deg, rgba(226,75,74,0.6) 0, rgba(226,75,74,0.6) 4px, transparent 4px, transparent 8px);
+  }
+  .chart-wrap { position: relative; width: 100%; height: 380px; }
+  .footnote {
+    margin-top: 16px;
+    font-size: 11px;
+    color: #aaa;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="hs-badge">HouseSigma Market Research</div>
+  <h1>Greater Calgary: Market Temperature</h1>
+  <p class="subtitle">Absorption rate vs median sale-to-list ratio &nbsp;·&nbsp; January 2021 – February 2026</p>
+
+  <div class="card">
+    <div class="legend-row">
+      <div class="legend-item">
+        <div class="legend-swatch" style="background:#378add"></div>
+        Absorption rate (left axis)
+      </div>
+      <div class="legend-item">
+        <div class="legend-swatch" style="background:#1d9e75"></div>
+        Median sale-to-list % (right axis)
+      </div>
+      <div class="legend-item">
+        <div class="legend-swatch dashed"></div>
+        100% = selling at asking price
+      </div>
+    </div>
+
+    <div class="chart-wrap">
+      <canvas id="chart"></canvas>
+    </div>
+
+    <p class="footnote">
+      Absorption rate = monthly sales ÷ active listings × 100 &nbsp;·&nbsp;
+      Median sale-to-list = median (sold price ÷ list price) × 100 &nbsp;·&nbsp;
+      Data: HouseSigma / CREB &nbsp;·&nbsp; March 2026
+    </p>
+  </div>
+</div>
+
+<script>
+const data = [
+  ["Jan 2021",28.0,97.16],["Feb 2021",38.3,97.86],["Mar 2021",51.0,98.31],
+  ["Apr 2021",51.9,98.39],["May 2021",43.9,98.45],["Jun 2021",41.9,98.28],
+  ["Jul 2021",34.2,98.02],["Aug 2021",34.9,97.90],["Sep 2021",37.3,97.80],
+  ["Oct 2021",42.9,97.85],["Nov 2021",50.4,97.94],["Dec 2021",61.6,98.17],
+  ["Jan 2022",71.1,99.20],["Feb 2022",87.8,100.95],["Mar 2022",88.1,100.02],
+  ["Apr 2022",68.4,100.00],["May 2022",57.4,99.37],["Jun 2022",50.2,98.82],
+  ["Jul 2022",40.0,98.29],["Aug 2022",40.8,97.99],["Sep 2022",38.8,97.90],
+  ["Oct 2022",43.3,97.77],["Nov 2022",44.9,97.78],["Dec 2022",47.4,97.69],
+  ["Jan 2023",42.1,98.21],["Feb 2023",53.9,98.78],["Mar 2023",64.8,99.12],
+  ["Apr 2023",73.0,99.44],["May 2023",84.8,100.00],["Jun 2023",80.2,100.00],
+  ["Jul 2023",67.1,100.00],["Aug 2023",71.7,99.73],["Sep 2023",60.4,99.60],
+  ["Oct 2023",57.3,99.25],["Nov 2023",50.9,98.78],["Dec 2023",53.5,98.63],
+  ["Jan 2024",64.6,99.06],["Feb 2024",75.3,100.00],["Mar 2024",89.9,100.00],
+  ["Apr 2024",88.4,100.00],["May 2024",80.9,100.00],["Jun 2024",65.4,100.00],
+  ["Jul 2024",51.4,99.43],["Aug 2024",45.1,98.95],["Sep 2024",36.1,98.80],
+  ["Oct 2024",39.7,98.51],["Nov 2024",37.5,98.39],["Dec 2024",38.5,98.10],
+  ["Jan 2025",36.2,98.36],["Feb 2025",37.1,98.65],["Mar 2025",38.6,98.72],
+  ["Apr 2025",35.6,98.61],["May 2025",36.5,98.44],["Jun 2025",31.8,98.40],
+  ["Jul 2025",28.5,98.09],["Aug 2025",27.8,97.92],["Sep 2025",23.2,97.93],
+  ["Oct 2025",26.7,97.66],["Nov 2025",25.6,97.52],["Dec 2025",26.3,97.36],
+  ["Jan 2026",25.7,97.63],["Feb 2026",28.9,97.94]
+];
+
+const labels = data.map(r => r[0]);
+const absorb = data.map(r => r[1]);
+const medStl = data.map(r => r[2]);
+
+new Chart(document.getElementById("chart"), {
+  data: {
+    labels,
+    datasets: [
+      {
+        type: "line", data: absorb,
+        borderColor: "#378add", backgroundColor: "rgba(55,138,221,0.08)",
+        borderWidth: 2.5, pointRadius: 2.5, pointHoverRadius: 5,
+        fill: true, tension: 0.3, yAxisID: "yLeft", order: 1
+      },
+      {
+        type: "line", data: medStl,
+        borderColor: "#1d9e75",
+        borderWidth: 2.5, pointRadius: 2.5, pointHoverRadius: 5,
+        fill: false, tension: 0.3, yAxisID: "yRight", order: 0
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    interaction: { mode: "index", intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: "rgba(255,255,255,0.97)",
+        titleColor: "#333", bodyColor: "#333",
+        borderColor: "#ddd", borderWidth: 1, padding: 10,
+        callbacks: {
+          label: ctx => ctx.datasetIndex === 0
+            ? `  Absorption rate: ${ctx.parsed.y.toFixed(1)}%`
+            : `  Median sale-to-list: ${ctx.parsed.y.toFixed(2)}%`
+        }
+      }
+    },
+    scales: {
+      x: {
+        ticks: {
+          color: "#999", font: { size: 11 }, maxRotation: 45, autoSkip: false,
+          callback: (v, i) => {
+            const m = labels[i];
+            if (m.startsWith("Jan")) return m.split(" ")[1];
+            if (m.startsWith("Jul")) return "Jul";
+            return "";
+          }
+        },
+        grid: { color: "rgba(0,0,0,0.05)" }
+      },
+      yLeft: {
+        type: "linear", position: "left", min: 0, max: 100,
+        ticks: { color: "#378add", font: { size: 11 }, callback: v => v + "%" },
+        grid: { color: "rgba(0,0,0,0.05)" },
+        title: { display: true, text: "Absorption rate", color: "#378add", font: { size: 11 } }
+      },
+      yRight: {
+        type: "linear", position: "right", min: 95, max: 106,
+        ticks: { color: "#1d9e75", font: { size: 11 }, callback: v => v + "%" },
+        grid: { drawOnChartArea: false },
+        title: { display: true, text: "Median sale-to-list %", color: "#1d9e75", font: { size: 11 } }
+      }
+    }
+  },
+  plugins: [{
+    id: "deco",
+    afterDraw(chart) {
+      const { ctx, chartArea: { left, right, top, bottom }, scales: { yRight, x } } = chart;
+      const y100 = yRight.getPixelForValue(100);
+      ctx.save();
+      ctx.strokeStyle = "rgba(226,75,74,0.45)";
+      ctx.lineWidth = 1; ctx.setLineDash([5, 4]);
+      ctx.beginPath(); ctx.moveTo(left, y100); ctx.lineTo(right, y100); ctx.stroke();
+      ctx.restore();
+      ["2022","2023","2024","2025","2026"].forEach(yr => {
+        const idx = labels.findIndex(l => l.startsWith("Jan") && l.includes(yr));
+        if (idx < 0) return;
+        const xp = x.getPixelForValue(idx);
+        ctx.save();
+        ctx.strokeStyle = "rgba(0,0,0,0.08)"; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+        ctx.beginPath(); ctx.moveTo(xp, top); ctx.lineTo(xp, bottom); ctx.stroke();
+        ctx.restore();
+      });
+    }
+  }]
+});
+</script>
+</body>
+</html>
